@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Juego 2D - #09 - Juego completo</title>
+    <!-- 1. Se oculta el ratón
+    	 2. Se agregan vidas al jugador 
+    	 3. Ya no se utiliza "setInterval" -->
+    <style>* { padding: 0; margin: 0; } canvas { background: #000; display: block; margin: 0 auto; * {cursor: none;} } </style>
+</head>
+<body>
+
+<canvas id="miCanvas" width="620" height="300"></canvas>
+
+<script>
+    var canvas = document.getElementById("miCanvas");
+    var ctx = canvas.getContext("2d");
+
+    var bolaRadio = 7;
+    var y = canvas.width/30;
+    var x = canvas.height-30;
+    var dy = 2;
+    var dx = 2;
+
+    var alturaPaleta = 10;
+    var anchuraPaleta = 75;
+    var paletaPosX = (canvas.width-anchuraPaleta)/2;
+
+    var flechaDerechaPresionada = false;
+    var flechaIzquierdaPresionada = false;
+
+    var nroFilasLadrillos = 7;
+    var nroColumnasLadrillos = 4;
+    var anchuraLadrillo = 75;
+    var alturaLadrillo = 20;
+    var rellenoLadrillo = 10;
+    var vacioSuperiorLadrillo = 90;
+    var vacioIzquierdoLadrillo = 20;
+    
+    var puntaje = 0;
+
+    // ESTA INSTRUCCIÓN CONTROLA EL NÚMERO DE VIDAS DEL JUGADOR
+    // CUANDO LA INSTRUCCIÓN vidas DISMINUYE A CERO, EL JUGADOR PIERDE,
+    // PUESTO QUE HA PERDIDO TRES VECES
+    var vidas = 3;
+
+    // ESTA VARIABLE DEFINE UN COLOR
+    // Se pueden utilizar otros colores para los diferentes elementos del juego
+    var colorFigura = "#ff0000";
+    var colorBola = "#00FFFB";
+    var colorPaleta = "#ff0000";
+    var colorLadrillo = "#00FFFB";
+    var colorTexto = "#FFFFFF";
+
+    // ESTA INSTRUCCIÓN OCULTA EL CURSOR DEL RATON (DENTRO DEL CANVAS)
+    canvas.style.cursor = 'none';
+
+    var ladrillos = [];
+    for(var c=0; c<nroColumnasLadrillos; c++) {
+        ladrillos[c] = [];
+        for(var f=0; f<nroFilasLadrillos; f++) {
+            ladrillos[c][f] = { x: 0, y: 0, estado: 1 };
+        }
+    }
+
+    document.addEventListener("keydown", manejadorTeclaPresionada, false);
+    document.addEventListener("keyup", manejadorTeclaLiberada, false);
+    document.addEventListener("mousemove", manejadorRaton, false);
+
+    function manejadorTeclaPresionada(e) {
+        if(e.keyCode == 39) {
+            flechaDerechaPresionada = true;
+        }
+        else if(e.keyCode == 37) {
+            flechaIzquierdaPresionada = true;
+        }
+    }
+
+    function manejadorTeclaLiberada(e) {
+        if(e.keyCode == 39) {
+            flechaDerechaPresionada = false;
+        }
+        else if(e.keyCode == 37) {
+            flechaIzquierdaPresionada = false;
+        }
+    }
+
+    function manejadorRaton(e) {
+        var posXRatonDentroDeCanvas = e.clientX - canvas.offsetLeft;
+        if(posXRatonDentroDeCanvas > 0 && posXRatonDentroDeCanvas < canvas.width) {
+            paletaPosX = posXRatonDentroDeCanvas - anchuraPaleta/2;
+        }
+    }
+
+    function detectarColision() {
+        for(var c=0; c<nroColumnasLadrillos; c++) {
+            for(var f=0; f<nroFilasLadrillos; f++) {
+                var b = ladrillos[c][f];
+                if(b.estado == 1) {
+                    if(x > b.x && x < b.x+anchuraLadrillo && y > b.y && y < b.y+alturaLadrillo) {
+                        dy = -dy;
+                        b.estado = 0;
+                        puntaje++;
+                        if(puntaje == nroFilasLadrillos*nroColumnasLadrillos) {
+                            alert("USTED GANA, FELICITACIONES!");
+                            document.location.reload();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function dibujarBola() {
+        ctx.beginPath();
+        ctx.arc(x, y, bolaRadio, 0, Math.PI*2);
+        // SE UTILIZA EL COLOR PREVIAMENTE DEFINIDO
+        ctx.fillStyle = colorBola;
+        ctx.fill();
+        ctx.closePath();
+    }
+    function dibujarPaleta() {
+        ctx.beginPath();
+        ctx.rect(paletaPosX, alturaPaleta/canvas.height, anchuraPaleta, alturaPaleta);
+        ctx.fillStyle = colorPaleta;
+        ctx.fill();
+        ctx.closePath();
+    }
+    function dibujarLadrillos() {
+        for(var c=0; c<nroColumnasLadrillos; c++) {
+            for(var f=0; f<nroFilasLadrillos; f++) {
+                if(ladrillos[c][f].estado == 1) {
+                    var ladrilloX = (f*(anchuraLadrillo+rellenoLadrillo))+vacioIzquierdoLadrillo;
+                    var ladrilloY = (c*(alturaLadrillo+rellenoLadrillo))+vacioSuperiorLadrillo;
+                    ladrillos[c][f].x = ladrilloX;
+                    ladrillos[c][f].y = ladrilloY;
+                    ctx.beginPath();
+                    ctx.rect(ladrilloX, ladrilloY, anchuraLadrillo, alturaLadrillo);
+                    ctx.fillStyle = colorLadrillo;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+        }
+    }
+
+    function dibujarPuntaje() {
+        ctx.font = "16px Arial";
+        ctx.fillStyle = colorTexto;
+        ctx.fillText("puntaje: "+puntaje, 8, 20);
+    }
+
+    function dibujarVidas() {
+        ctx.font = "16px Arial";
+        ctx.fillStyle = colorTexto;
+        // SE MUESTRA EL NÚMERO DE VIDAS DISPONIBLES
+        ctx.fillText("vidas: "+vidas, canvas.width-65, 20);
+    }
+
+    function dibujar() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        dibujarLadrillos();
+        dibujarBola();
+        dibujarPaleta();
+        dibujarPuntaje();
+        dibujarVidas();
+        detectarColision();
+
+        if(x + dx > canvas.width-bolaRadio || x + dx < bolaRadio) {
+            dx = -dx;
+        }
+        if(y > canvas.height) {
+            dy = -dy;
+        }
+        else if(y < alturaPaleta) {
+            if(x < paletaPosX + anchuraPaleta && x > paletaPosX) {
+                dy = -dy;
+            }
+            else {
+            	// SI SE PRODUCE UN CONTACTO DE LA BOLA CON LA BASE DEL CANVAS
+            	// SE PIERDE UNA VIDA. PARA ELLO, LA INSTRUCCIÓN vidas--;
+            	// LO CUAL EQUIVALE A: vidas = vidas - 1
+                vidas--;
+                if(!vidas) {
+                	// SI vidas == 0 (lo cual también puede escribir: !vidas)
+                	// EL JUGADOR HA PERDIDO
+                    alert("GAME OVER");
+                    document.location.reload();
+                }
+                else {
+                	// SI vidas > 0 (diferente de CERO) EL JUEGO CONTINUA
+                    y = canvas.width/30;
+                    x = canvas.height-30;
+                    dx = 2;
+                    dy = 2;
+                    paletaPosX = (canvas.width-anchuraPaleta)/2;
+                }
+            }
+        }
+
+        if(flechaDerechaPresionada && paletaPosX < canvas.width-anchuraPaleta) {
+            paletaPosX += 7;
+        }
+        else if(flechaIzquierdaPresionada && paletaPosX > 0) {
+            paletaPosX -= 7;
+        }
+
+        x += dx;
+        y += dy;
+
+        // ESTE ES UN SEGUNDO MÉTODO PARA REALIZAR LA ANIMACIÓN DEL JUEGO
+        // LA INSTRUCCIÓN: requestAnimationFrame SE EJECUTA 60 VECES POR SEGUNDO
+        // Y AL EJECUTARSE LLAMA A LA FUNCIÓN ENTRE PARÉNTESIS
+        // POR TANTO, dibujar SE EJECUTA 60 VECES POR SEGUNDO
+        // GENERANDO EL CICLO DEL JUEGO
+        requestAnimationFrame(dibujar);
+    }
+
+    dibujar();
+</script>
+
+</body>
+</html>
